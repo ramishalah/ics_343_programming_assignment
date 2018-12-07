@@ -29,20 +29,20 @@ public class Main {
         long before, after;
         long totalTime = 0;
         // initializing the arrays
-        int a[][] = new int[(int) Math.pow(2, dimension)][(int) Math.pow(2, dimension)];
-        int b[][] = new int[(int) Math.pow(2, dimension)][(int) Math.pow(2, dimension)];
+        int firstMatrix[][] = new int[(int) Math.pow(2, dimension)][(int) Math.pow(2, dimension)];
+        int secondMatrix[][] = new int[(int) Math.pow(2, dimension)][(int) Math.pow(2, dimension)];
 
         int count = 0;
 
         // reading the matrices and storing it in the 'a' and 'b'
-        for (int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a.length; j++) {
-                a[i][j] = fileScanner.nextInt();
+        for (int i = 0; i < firstMatrix.length; i++) {
+            for (int j = 0; j < firstMatrix.length; j++) {
+                firstMatrix[i][j] = fileScanner.nextInt();
             }
         }
-        for (int i = 0; i < b.length; i++) {
-            for (int j = 0; j < b.length; j++) {
-                b[i][j] = fileScanner.nextInt();
+        for (int i = 0; i < secondMatrix.length; i++) {
+            for (int j = 0; j < secondMatrix.length; j++) {
+                secondMatrix[i][j] = fileScanner.nextInt();
             }
         }
 
@@ -50,7 +50,7 @@ public class Main {
 
         before = System.nanoTime();
         // calling the stratten's algorithm
-        int result[][] = strassen(a, b, a.length);
+        int result[][] = strassen(firstMatrix, secondMatrix, firstMatrix.length);
         // calling the divide and conquer algorithm
 //        int result[][] = divideAndConquer(a, b, a.length);
         after = System.nanoTime();
@@ -60,8 +60,8 @@ public class Main {
         System.out.println("The total time is: " + (totalTime / Math.pow(10, 9)) + " seconds");
 
         writer.flush();
-        for (int i = 0; i < b.length; i++) {
-            for (int j = 0; j < b.length; j++) {
+        for (int i = 0; i < secondMatrix.length; i++) {
+            for (int j = 0; j < secondMatrix.length; j++) {
                count++;
                writer.append(result[i][j] + " ");
                if(count % Math.pow(2, dimension) == 0) {
