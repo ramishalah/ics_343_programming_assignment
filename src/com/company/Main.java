@@ -1,6 +1,5 @@
 package com.company;
 
-import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.*;
 import java.util.Scanner;
 
@@ -18,19 +17,17 @@ public class Main {
         String outputFileName = keyboardScanner.nextLine();
 
 
-
         // extracting the dimensions of the matrices from the file name
         int dimension = Integer.parseInt(inputFileName.substring(7, 9));
-
-        System.out.println(dimension);
 
         // getting the file from the user
         Scanner fileScanner = new Scanner(new File(inputFileName));
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
 
-        long startTime, endTime;
-        long totalTimeC = 0;
+        // initializing the timers
+        long before, after;
+        long totalTime = 0;
         // initializing the arrays
         int a[][] = new int[(int) Math.pow(2, dimension)][(int) Math.pow(2, dimension)];
         int b[][] = new int[(int) Math.pow(2, dimension)][(int) Math.pow(2, dimension)];
@@ -51,12 +48,16 @@ public class Main {
 
 
 
-        startTime = System.nanoTime();
-        int result[][] = strassenMM(a, b, a.length);
-        //        int result[][] = strassenMM(a, b, a.length);
-        endTime = System.nanoTime();
-        totalTimeC = endTime - startTime;
-        System.out.println("The total time is: " + (totalTimeC / Math.pow(10, 9)) + " seconds");
+        before = System.nanoTime();
+        // calling the stratten's algorithm
+        int result[][] = strassen(a, b, a.length);
+        // calling the divide and conquer algorithm
+//        int result[][] = divideAndConquer(a, b, a.length);
+        after = System.nanoTime();
+
+        // total time
+        totalTime = after - before;
+        System.out.println("The total time is: " + (totalTime / Math.pow(10, 9)) + " seconds");
 
         writer.flush();
         for (int i = 0; i < b.length; i++) {
@@ -71,309 +72,181 @@ public class Main {
 
     }
 
-    /**
-     * Will perform divide and conquer matrix multiplication by recursively
-     * calling itself on smaller matrices made up of 1/4 of the original matrix
-     *
-     * @param A
-     *            One matrix to be multiplied
-     * @param B
-     *            Another matrix to be multiplied
-     * @param n
-     *            the size of the matrix
-     * @return a new array C which is the result of the matrix multiplication
-     */
-    public static int[][] divideAndConquerMM(int[][] A, int[][] B, int n) {
-        int[][] C = new int[n][n];
 
-        if (n == 1) {
-            C[0][0] = A[0][0] * B[0][0];
-            return C;
+    public static int[][] divideAndConquer(int[][] firstMatrix, int[][] secondMatrix, int size) {
+        int[][] resultMatrix = new int[size][size];
+
+        if (size == 1) {
+            resultMatrix[0][0] = firstMatrix[0][0] * secondMatrix[0][0];
+            return resultMatrix;
         } else {
-            int[][] A11 = new int[n / 2][n / 2];
-            int[][] A12 = new int[n / 2][n / 2];
-            int[][] A21 = new int[n / 2][n / 2];
-            int[][] A22 = new int[n / 2][n / 2];
-            int[][] B11 = new int[n / 2][n / 2];
-            int[][] B12 = new int[n / 2][n / 2];
-            int[][] B21 = new int[n / 2][n / 2];
-            int[][] B22 = new int[n / 2][n / 2];
+            int[][] A11 = new int[size / 2][size / 2];
+            int[][] A12 = new int[size / 2][size / 2];
+            int[][] A21 = new int[size / 2][size / 2];
+            int[][] A22 = new int[size / 2][size / 2];
+            int[][] B11 = new int[size / 2][size / 2];
+            int[][] B12 = new int[size / 2][size / 2];
+            int[][] B21 = new int[size / 2][size / 2];
+            int[][] B22 = new int[size / 2][size / 2];
 
-            deconstructMatrix(A, A11, 0, 0);
-            deconstructMatrix(A, A12, 0, n / 2);
-            deconstructMatrix(A, A21, n / 2, 0);
-            deconstructMatrix(A, A22, n / 2, n / 2);
-            deconstructMatrix(B, B11, 0, 0);
-            deconstructMatrix(B, B12, 0, n / 2);
-            deconstructMatrix(B, B21, n / 2, 0);
-            deconstructMatrix(B, B22, n / 2, n / 2);
+            // getting the sub-matrices
+            getMatrix(firstMatrix, A11, 0, 0);
+            getMatrix(firstMatrix, A12, 0, size / 2);
+            getMatrix(firstMatrix, A21, size / 2, 0);
+            getMatrix(firstMatrix, A22, size / 2, size / 2);
+            getMatrix(secondMatrix, B11, 0, 0);
+            getMatrix(secondMatrix, B12, 0, size / 2);
+            getMatrix(secondMatrix, B21, size / 2, 0);
+            getMatrix(secondMatrix, B22, size / 2, size / 2);
 
-            int[][] C11 = addMatrix(divideAndConquerMM(A11, B11, n / 2),
-                    divideAndConquerMM(A12, B21, n / 2), n / 2);
-            int[][] C12 = addMatrix(divideAndConquerMM(A11, B12, n / 2),
-                    divideAndConquerMM(A12, B22, n / 2), n / 2);
-            int[][] C21 = addMatrix(divideAndConquerMM(A21, B11, n / 2),
-                    divideAndConquerMM(A22, B21, n / 2), n / 2);
-            int[][] C22 = addMatrix(divideAndConquerMM(A21, B12, n / 2),
-                    divideAndConquerMM(A22, B22, n / 2), n / 2);
+            int[][] C11 = add(divideAndConquer(A11, B11, size / 2), divideAndConquer(A12, B21, size / 2), size / 2);
+            int[][] C12 = add(divideAndConquer(A11, B12, size / 2), divideAndConquer(A12, B22, size / 2), size / 2);
+            int[][] C21 = add(divideAndConquer(A21, B11, size / 2), divideAndConquer(A22, B21, size / 2), size / 2);
+            int[][] C22 = add(divideAndConquer(A21, B12, size / 2), divideAndConquer(A22, B22, size / 2), size / 2);
 
-            constructMatrix(C11, C, 0, 0);
-            constructMatrix(C12, C, 0, n / 2);
-            constructMatrix(C21, C, n / 2, 0);
-            constructMatrix(C22, C, n / 2, n / 2);
+
+            // combining the results
+            combine(C11, resultMatrix, 0, 0);
+            combine(C12, resultMatrix, 0, size / 2);
+            combine(C21, resultMatrix, size / 2, 0);
+            combine(C22, resultMatrix, size / 2, size / 2);
         }
 
-        return C;
+        return resultMatrix;
     }
 
 
-//    public static int[][] matrixMultiplicationFinal(int[][] A, int[][] B) {
-//
-//        return matrixMultiplication(
-//                A, B, 0, 0,
-//                0, 0, A.length);
-//
-//    }
 
-
-//    public static int[][] matrixMultiplication(int[][] A, int[][] B, int rowA, int colA, int rowB, int colB, int size) {
-//
-//        int[][] C = new int[size][size];
-//
-//        if (size == 1)
-//            C[0][0] = A[rowA][colA] * B[rowB][colB];
-//
-//        else {
-//
-//            int newSize = size / 2;
-//            //C11
-//            sumMatrix(C,
-//
-//                    matrixMultiplication(A, B, rowA, colA, rowB, colB, newSize),
-//                    matrixMultiplication(A, B, rowA, colA + newSize, rowB + newSize, colB, newSize),
-//                    0, 0);
-//
-//            sumMatrix(C,
-//
-//                    matrixMultiplication(A, B, rowA, colA, rowB, colB + newSize, newSize),
-//                    matrixMultiplication(A, B, rowA, colA + newSize, rowB + newSize, colB + newSize, newSize),
-//                    0, newSize);
-//
-//            sumMatrix(C,
-//
-//                    matrixMultiplication(A, B, rowA + newSize, colA, rowB, colB, newSize),
-//                    matrixMultiplication(A, B, rowA + newSize, colA + newSize, rowB + newSize, colB, newSize),
-//                    newSize, 0);
-//
-//            sumMatrix(C,
-//
-//                    matrixMultiplication(A, B, rowA + newSize, colA, rowB, colB + newSize, newSize),
-//                    matrixMultiplication(A, B, rowA + newSize, colA + newSize, rowB + newSize, colB + newSize, newSize),
-//                    newSize, newSize);
-//        }
-//
-//        return C;
-//
-//    }
-
-    /**
-     * Will use the strassenMMHelper method to multiply the two matrices
-     *
-     * @param A
-     *            One matrix to be multiplied
-     * @param B
-     *            Another matrix to be multiplied
-     * @param n
-     *            the size of the matrix
-     * @return a new array C which is the result of the matrix multiplication
-     */
-    public static int[][] strassenMM(int[][] A, int[][] B, int n) {
-        int[][] C = new int[n][n];
-        strassenMMHelper(A, B, C, n);
-        return C;
+    public static int[][] strassen(int[][] firstMatrix, int[][] secondMatrix, int size) {
+        int[][] resultMatrix = new int[size][size];
+        strassenCore(firstMatrix, secondMatrix, resultMatrix, size);
+        return resultMatrix;
     }
 
-    /**
-     * Creates 7 new matrices P - V, based on Strassen's algorithm which will be
-     * used to find the matrix C, which is the result of the multiplication of A
-     * and B.
-     *
-     * @param A
-     *            One matrix to be multiplied
-     * @param B
-     *            Another matrix to be multiplied
-     * @param C
-     *            the result of the matrix multiplication
-     * @param n
-     *            the size of the matrix
-     */
-    public static void strassenMMHelper(int[][] A, int[][] B, int[][] C, int n) {
+    public static void strassenCore(int[][] firstMatrix, int[][] secondMatrix, int[][] resultMatrix, int size) {
 
-        if (n == 2) {
-            C[0][0] = (A[0][0] * B[0][0]) + (A[0][1] * B[1][0]);
-            C[0][1] = (A[0][0] * B[0][1]) + (A[0][1] * B[1][1]);
-            C[1][0] = (A[1][0] * B[0][0]) + (A[1][1] * B[1][0]);
-            C[1][1] = (A[1][0] * B[0][1]) + (A[1][1] * B[1][1]);
+        if (size == 2) {
+
+            resultMatrix[0][0] = (firstMatrix[0][0] * secondMatrix[0][0]) + (firstMatrix[0][1] * secondMatrix[1][0]);
+            resultMatrix[0][1] = (firstMatrix[0][0] * secondMatrix[0][1]) + (firstMatrix[0][1] * secondMatrix[1][1]);
+            resultMatrix[1][0] = (firstMatrix[1][0] * secondMatrix[0][0]) + (firstMatrix[1][1] * secondMatrix[1][0]);
+            resultMatrix[1][1] = (firstMatrix[1][0] * secondMatrix[0][1]) + (firstMatrix[1][1] * secondMatrix[1][1]);
+
         } else {
-            int[][] A11 = new int[n / 2][n / 2];
-            int[][] A12 = new int[n / 2][n / 2];
-            int[][] A21 = new int[n / 2][n / 2];
-            int[][] A22 = new int[n / 2][n / 2];
-            int[][] B11 = new int[n / 2][n / 2];
-            int[][] B12 = new int[n / 2][n / 2];
-            int[][] B21 = new int[n / 2][n / 2];
-            int[][] B22 = new int[n / 2][n / 2];
+            // initializing the sub-matrices
+            int[][] A11 = new int[size / 2][size / 2];
+            int[][] A12 = new int[size / 2][size / 2];
+            int[][] A21 = new int[size / 2][size / 2];
+            int[][] A22 = new int[size / 2][size / 2];
+            int[][] B11 = new int[size / 2][size / 2];
+            int[][] B12 = new int[size / 2][size / 2];
+            int[][] B21 = new int[size / 2][size / 2];
+            int[][] B22 = new int[size / 2][size / 2];
 
-            int[][] P = new int[n / 2][n / 2];
-            int[][] Q = new int[n / 2][n / 2];
-            int[][] R = new int[n / 2][n / 2];
-            int[][] S = new int[n / 2][n / 2];
-            int[][] T = new int[n / 2][n / 2];
-            int[][] U = new int[n / 2][n / 2];
-            int[][] V = new int[n / 2][n / 2];
 
-            deconstructMatrix(A, A11, 0, 0);
-            deconstructMatrix(A, A12, 0, n / 2);
-            deconstructMatrix(A, A21, n / 2, 0);
-            deconstructMatrix(A, A22, n / 2, n / 2);
-            deconstructMatrix(B, B11, 0, 0);
-            deconstructMatrix(B, B12, 0, n / 2);
-            deconstructMatrix(B, B21, n / 2, 0);
-            deconstructMatrix(B, B22, n / 2, n / 2);
+            // initializing the D1 and stuff ..
+            int[][] D1 = new int[size / 2][size / 2];
+            int[][] D2 = new int[size / 2][size / 2];
+            int[][] D3 = new int[size / 2][size / 2];
+            int[][] D4 = new int[size / 2][size / 2];
+            int[][] D5 = new int[size / 2][size / 2];
+            int[][] D6 = new int[size / 2][size / 2];
+            int[][] D7 = new int[size / 2][size / 2];
 
-            strassenMMHelper(addMatrix(A11, A22, n / 2),
-                    addMatrix(B11, B22, n / 2), P, n / 2);
-            strassenMMHelper(addMatrix(A21, A22, n / 2), B11, Q, n / 2);
-            strassenMMHelper(A11, subtractMatrix(B12, B22, n / 2), R, n / 2);
-            strassenMMHelper(A22, subtractMatrix(B21, B11, n / 2), S, n / 2);
-            strassenMMHelper(addMatrix(A11, A12, n / 2), B22, T, n / 2);
-            strassenMMHelper(subtractMatrix(A21, A11, n / 2),
-                    addMatrix(B11, B12, n / 2), U, n / 2);
-            strassenMMHelper(subtractMatrix(A12, A22, n / 2),
-                    addMatrix(B21, B22, n / 2), V, n / 2);
+            getMatrix(firstMatrix, A11, 0, 0);
+            getMatrix(firstMatrix, A12, 0, size / 2);
+            getMatrix(firstMatrix, A21, size / 2, 0);
+            getMatrix(firstMatrix, A22, size / 2, size / 2);
+            getMatrix(secondMatrix, B11, 0, 0);
+            getMatrix(secondMatrix, B12, 0, size / 2);
+            getMatrix(secondMatrix, B21, size / 2, 0);
+            getMatrix(secondMatrix, B22, size / 2, size / 2);
 
-            int[][] C11 = addMatrix(
-                    subtractMatrix(addMatrix(P, S, P.length), T, T.length), V,
-                    V.length);
-            int[][] C12 = addMatrix(R, T, R.length);
-            int[][] C21 = addMatrix(Q, S, Q.length);
-            int[][] C22 = addMatrix(
-                    subtractMatrix(addMatrix(P, R, P.length), Q, Q.length), U,
-                    U.length);
+            //D1
+            strassenCore(add(A11, A22, size / 2), add(B11, B22, size / 2), D1, size / 2);
+            //D2
+            strassenCore(add(A21, A22, size / 2), B11, D2, size / 2);
+            //D3
+            strassenCore(A11, subtract(B12, B22, size / 2), D3, size / 2);
+            //D4
+            strassenCore(A22, subtract(B21, B11, size / 2), D4, size / 2);
+            //D5
+            strassenCore(add(A11, A12, size / 2), B22, D5, size / 2);
+            //D6
+            strassenCore(subtract(A21, A11, size / 2), add(B11, B12, size / 2), D6, size / 2);
+            //D7
+            strassenCore(subtract(A12, A22, size / 2), add(B21, B22, size / 2), D7, size / 2);
 
-            constructMatrix(C11, C, 0, 0);
-            constructMatrix(C12, C, 0, n / 2);
-            constructMatrix(C21, C, n / 2, 0);
-            constructMatrix(C22, C, n / 2, n / 2);
+            //C11
+            int[][] C11 = add(subtract(add(D1, D4, D1.length), D5, D5.length), D7, D7.length);
+            //C12
+            int[][] C12 = add(D3, D5, D3.length);
+            //C21
+            int[][] C21 = add(D2, D4, D2.length);
+            //C22
+            int[][] C22 = add(subtract(add(D1, D3, D1.length), D2, D2.length), D6,D6.length);
+
+
+            // now we are combining the results of all matrices to the result Matrix
+            combine(C11, resultMatrix, 0, 0);
+            combine(C12, resultMatrix, 0, size / 2);
+            combine(C21, resultMatrix, size / 2, 0);
+            combine(C22, resultMatrix, size / 2, size / 2);
         }
     }
-    /**
-     * Creates a new matrix based off of part of another matrix
-     *
-     * @param initialMatrix
-     *            the initial matrix
-     * @param newMatrix
-     *            the new matrix created from the initial matrix
-     * @param a
-     *            the initial row position of initialMatrix used when creating
-     *            newMatrix
-     * @param b
-     *            the initial column position of initialMatrix used when
-     *            creating newMatrix
-     */
-    private static void constructMatrix(int[][] initialMatrix,
-                                        int[][] newMatrix, int a, int b) {
 
-        int y = b;
+    private static void combine(int[][] mat,
+                                int[][] newMat, int firstLocation, int secondLocation) {
 
-        for (int i = 0; i < initialMatrix.length; i++) {
-            for (int j = 0; j < initialMatrix.length; j++) {
-                newMatrix[a][y++] = initialMatrix[i][j];
+        int temp = secondLocation;
+
+        for (int i = 0; i < mat.length; i++) {
+            for (int j = 0; j < mat.length; j++) {
+                newMat[firstLocation][temp++] = mat[i][j];
             }
-            y = b;
-            a++;
+            temp = secondLocation;
+            firstLocation++;
         }
     }
 
-    /**
-     * Adds two matrices together
-     *
-     * @param A
-     *            One matrix to be added
-     * @param B
-     *            Another matrix to be added
-     * @param n
-     *            the size of the matrix
-     * @return a new array C which is the result of the matrix addition
-     */
-    private static int[][] addMatrix(int[][] A, int[][] B, int n) {
 
-        int[][] C = new int[n][n];
+    private static void getMatrix(int[][] mat,
+                                  int[][] newMat, int firstLocation, int secondLocation) {
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                C[i][j] = A[i][j] + B[i][j];
+        int temp = secondLocation;
+        for (int i = 0; i < newMat.length; i++) {
+            for (int j = 0; j < newMat.length; j++) {
+                newMat[i][j] = mat[firstLocation][temp++];
             }
+            temp = secondLocation;
+            firstLocation++;
         }
-        return C;
     }
 
-    /**
-     * Subtracts two matrices
-     *
-     * @param A
-     *            One matrix to be subtracted
-     * @param B
-     *            Another matrix to be subtracted
-     * @param n
-     *            the size of the matrix
-     * @return a new array C which is the result of the matrix subtraction
-     */
-    private static int[][] subtractMatrix(int[][] A, int[][] B, int n) {
 
-        int[][] C = new int[n][n];
+    private static int[][] add(int[][] firstMatrix, int[][] secondMatrix, int size) {
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                C[i][j] = A[i][j] - B[i][j];
+        int[][] resultMatrix = new int[size][size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                resultMatrix[i][j] = firstMatrix[i][j] + secondMatrix[i][j];
             }
         }
-        return C;
+        return resultMatrix;
     }
 
-    /**
-     * Creates a new matrix based off of part of another matrix
-     *
-     * @param initialMatrix
-     *            the initial matrix
-     * @param newMatrix
-     *            the new matrix created from the initial matrix
-     * @param a
-     *            the initial row position of initialMatrix used when creating
-     *            newMatrix
-     * @param b
-     *            the initial column position of initialMatrix used when
-     *            creating newMatrix
-     */
-    private static void deconstructMatrix(int[][] initialMatrix,
-                                          int[][] newMatrix, int a, int b) {
 
-        int y = b;
-        for (int i = 0; i < newMatrix.length; i++) {
-            for (int j = 0; j < newMatrix.length; j++) {
-                newMatrix[i][j] = initialMatrix[a][y++];
+    private static int[][] subtract(int[][] firstMatrix, int[][] secondMatrix, int size) {
+
+        int[][] resultMatrix = new int[size][size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                resultMatrix[i][j] = firstMatrix[i][j] - secondMatrix[i][j];
             }
-            y = b;
-            a++;
         }
+        return resultMatrix;
     }
 
-//    private static void sumMatrix(int[][] C, int[][] A, int[][] B, int rowC, int colC) {
-//        int n = A.length;
-//        for (int i = 0; i < n; i++) {
-//            for (int j = 0; j < n; j++)
-//                C[i + rowC][j + colC] = A[i][j] + B[i][j];
-//        }
-//
-//    }
 }
